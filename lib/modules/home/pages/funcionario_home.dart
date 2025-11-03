@@ -6,8 +6,22 @@ import 'package:onion_mobile/modules/lista/lista.dart';
 import 'package:onion_mobile/modules/lista/lista_controller.dart';
 import 'package:provider/provider.dart';
 
-class FuncionarioHome extends StatelessWidget {
+class FuncionarioHome extends StatefulWidget {
   const FuncionarioHome({super.key});
+
+  @override
+  State<FuncionarioHome> createState() => _FuncionarioHomeState();
+}
+
+class _FuncionarioHomeState extends State<FuncionarioHome> {
+  @override
+  void initState() {
+    super.initState();
+    // Carregar listas ao iniciar a tela
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ListaController>().fetchListas();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,18 +57,26 @@ class FuncionarioHome extends StatelessWidget {
                       context,
                     ).textTheme.titleMedium?.copyWith(color: Colors.grey),
                   ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Toque no + para criar sua primeira lista',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: controller.listas.length,
-            itemBuilder: (context, index) {
-              final lista = controller.listas[index];
-              return _ListaCard(lista: lista);
-            },
+          return RefreshIndicator(
+            onRefresh: () => controller.fetchListas(),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: controller.listas.length,
+              itemBuilder: (context, index) {
+                final lista = controller.listas[index];
+                return _ListaCard(lista: lista);
+              },
+            ),
           );
         },
       ),
@@ -83,6 +105,7 @@ class FuncionarioHome extends StatelessWidget {
                 labelText: 'Nome da lista',
                 hintText: 'Ex: Compras do mês',
               ),
+              autofocus: true,
             ),
             const SizedBox(height: 16),
             TextField(
@@ -114,13 +137,33 @@ class FuncionarioHome extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               if (nomeController.text.isNotEmpty) {
-                context.read<ListaController>().createLista(
-                  nomeController.text,
-                  selectedDate ?? DateTime.now(),
-                );
-                Navigator.pop(context);
+                try {
+                  await context.read<ListaController>().createLista(
+                    nomeController.text,
+                    selectedDate ?? DateTime.now(),
+                  );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lista criada com sucesso!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao criar lista: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               }
             },
             child: const Text('Criar'),
@@ -167,6 +210,7 @@ class _ListaCard extends StatelessWidget {
                 : 'Sem data',
           ),
           leading: const CircleAvatar(child: Icon(Icons.list_alt)),
+          trailing: const Icon(Icons.chevron_right),
           onTap: () {
             Navigator.pushNamed(context, '/lista_detalhes', arguments: lista);
           },
@@ -187,9 +231,29 @@ class _ListaCard extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
-              context.read<ListaController>().deleteLista(lista.id);
-              Navigator.pop(context);
+            onPressed: () async {
+              try {
+                await context.read<ListaController>().deleteLista(lista.id);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lista excluída com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao excluir lista: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Excluir'),
@@ -218,10 +282,32 @@ class _ListaCard extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               if (nomeController.text.isNotEmpty) {
-                context.read<ListaController>().duplicateLista(lista.id);
-                Navigator.pop(context);
+                try {
+                  await context.read<ListaController>().duplicateLista(
+                    lista.id,
+                  );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lista duplicada com sucesso!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao duplicar lista: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               }
             },
             child: const Text('Duplicar'),

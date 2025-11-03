@@ -4,6 +4,8 @@ import 'package:onion_mobile/core/auth/auth_controller.dart';
 import 'package:onion_mobile/core/supabase_config.dart';
 import 'package:onion_mobile/login/login_page.dart';
 import 'package:onion_mobile/modules/home/pages/funcionario_home.dart';
+import 'package:onion_mobile/modules/home/pages/lista_detalhe_page.dart';
+import 'package:onion_mobile/modules/lista/lista.dart';
 import 'package:onion_mobile/modules/lista/lista_controller.dart';
 import 'package:onion_mobile/modules/produto/produto_controller.dart';
 import 'package:provider/provider.dart';
@@ -27,13 +29,9 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<SupabaseClient>.value(value: SupabaseConfig.client),
-        ChangeNotifierProvider(create: (_) => AuthController()),
+        ChangeNotifierProvider(create: (_) => AuthController(), lazy: false),
         ChangeNotifierProvider(create: (_) => ListaController()),
         ChangeNotifierProvider(create: (_) => ProdutoController()),
-        ChangeNotifierProvider(
-          create: (context) => AuthController(),
-          lazy: false,
-        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -42,6 +40,19 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         ),
+        routes: {
+          '/login': (context) => const LoginPage(),
+          '/home': (context) => const FuncionarioHome(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == '/lista_detalhes') {
+            final lista = settings.arguments as Lista;
+            return MaterialPageRoute(
+              builder: (context) => ListaDetalhesPage(lista: lista),
+            );
+          }
+          return null;
+        },
         home: Consumer<AuthController>(
           builder: (context, auth, _) {
             if (auth.isLoading) {

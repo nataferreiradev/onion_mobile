@@ -28,6 +28,21 @@ class ProdutoController extends ChangeNotifier {
     }
   }
 
+  Future<List<ProdutoLista>> fetchProdutosDaLista(int listaId) async {
+    try {
+      final response = await _supabase
+          .from('produtos_lista')
+          .select('*, produto(*)')
+          .eq('id_lista', listaId)
+          .order('id');
+
+      return response.map<ProdutoLista>((json) => ProdutoLista.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Erro ao buscar produtos da lista: $e');
+      rethrow;
+    }
+  }
+
   Future<void> addProdutoNaLista(int listaId, int produtoId, int qtde) async {
     try {
       await _supabase.from('produtos_lista').insert({
@@ -67,4 +82,32 @@ class ProdutoController extends ChangeNotifier {
       rethrow;
     }
   }
+}
+
+// Classe auxiliar para representar produtos na lista
+class ProdutoLista {
+  final int id;
+  final int idLista;
+  final int idProduto;
+  final int qtde;
+  final String produtoDescricao;
+  final String? unidade;
+
+  ProdutoLista({
+    required this.id,
+    required this.idLista,
+    required this.idProduto,
+    required this.qtde,
+    required this.produtoDescricao,
+    this.unidade,
+  });
+
+  factory ProdutoLista.fromJson(Map<String, dynamic> json) => ProdutoLista(
+        id: json['id'],
+        idLista: json['id_lista'],
+        idProduto: json['id_produto'],
+        qtde: json['qtde'],
+        produtoDescricao: json['produto']['descricao'],
+        unidade: json['produto']['unidade'],
+      );
 }
